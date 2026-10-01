@@ -1,9 +1,17 @@
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 final _currency = NumberFormat.currency(symbol: r'$', decimalDigits: 2);
-final _dayLabel = DateFormat('EEE d MMM', 'es');
-final _timeLabel = DateFormat('h:mm a', 'es');
-final _fullLabel = DateFormat("EEEE d 'de' MMMM, h:mm a", 'es');
+
+/// Los patrones en espanol necesitan los simbolos del locale cargados a mano.
+late final DateFormat _dayLabel = _esDate('EEE d MMM');
+late final DateFormat _timeLabel = _esDate('h:mm a');
+late final DateFormat _fullLabel = _esDate("EEEE d 'de' MMMM, h:mm a");
+
+DateFormat _esDate(String pattern) {
+  initializeDateFormatting('es');
+  return DateFormat(pattern, 'es');
+}
 
 String money(num value) => _currency.format(value);
 
