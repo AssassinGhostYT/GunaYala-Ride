@@ -78,15 +78,37 @@ service cloud.firestore {
         || (isSignedIn() && resource.data.role == 'driver');
       allow list: if isSelf(uid) || isStaff();
 
+      // Registro: correo (viene de Firebase Auth), nombre, apellido, edad,
+      // celular con su pais y rol. La edad minima de 18 se valida aqui, no
+      // solo en la app.
       allow create: if isSelf(uid)
-        && request.resource.data.keys().hasOnly(['name', 'phone', 'role', 'photoUrl', 'createdAt'])
+        && request.resource.data.keys().hasOnly([
+             'nombre', 'apellido', 'edad', 'celular', 'prefijo',
+             'paisCodigo', 'paisNombre', 'telefono', 'role', 'photoUrl',
+             'createdAt', 'updatedAt'])
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 2
+        && request.resource.data.apellido is string
+        && request.resource.data.apellido.size() >= 2
+        && request.resource.data.edad is int
+        && request.resource.data.edad >= 18
+        && request.resource.data.edad <= 100
+        && request.resource.data.celular is string
+        && request.resource.data.celular.size() >= 6
+        && request.resource.data.telefono is string
+        && request.resource.data.telefono.size() >= 8
+        && request.resource.data.paisCodigo is string
+        && request.resource.data.paisCodigo.size() == 2
         && request.resource.data.role in ['driver', 'rider'];
 
       // Contadores (stats) solo los escribe el servidor con FieldValue.increment.
+      // Celular, pais y rol no se cambian despues del registro: si no, alguien
+      // se volveria otro numero. El nombre y el apellido si se corrigen.
       allow update: if isSelf(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'phone', 'photoUrl', 'updatedAt'])
-        && request.resource.data.phone == resource.data.phone
+             .hasOnly(['nombre', 'apellido', 'photoUrl', 'updatedAt'])
+        && request.resource.data.telefono == resource.data.telefono
+        && request.resource.data.celular == resource.data.celular
         && request.resource.data.role == resource.data.role;
 
       allow delete: if false;

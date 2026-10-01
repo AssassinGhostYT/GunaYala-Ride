@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import '../data/countries.dart';
 import '../models/enums.dart';
 import '../models/user_profile.dart';
 import '../models/vehicle.dart';
@@ -36,6 +37,7 @@ class AuthProvider extends ChangeNotifier {
   UserProfile? _profile;
   Vehicle? _vehicle;
   DriverVerification _driverVerification = const DriverVerification();
+  Role _chosenRole = Role.rider;
   bool _loading = true;
   String? _error;
 
@@ -55,6 +57,14 @@ class AuthProvider extends ChangeNotifier {
 
   String? get error => _error;
 
+  /// Rol que eligio en el registro. Onboarding lo confirma.
+  Role get chosenRole => _chosenRole;
+
+  void setChosenRole(Role role) {
+    _chosenRole = role;
+    notifyListeners();
+  }
+
   Vehicle? get vehicle => _vehicle;
 
   DriverVerification get driverVerification => _driverVerification;
@@ -66,7 +76,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isVerifiedDriver =>
       _driverVerification.status.isVerified && !_driverVerification.badgeSuspended;
 
-  bool get needsOnboarding => _user != null && (_profile == null || _profile!.name.isEmpty);
+  bool get needsOnboarding => _user != null && (_profile == null || _profile!.nombre.isEmpty);
 
   void _onUser(User? user) {
     _user = user;
@@ -101,9 +111,37 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
+  /// Alta de cuenta: correo, contrasena, nombre, apellido, edad, celular y pais.
+  Future<void> register({
+    required String email,
+    required String password,
+    required String nombre,
+    required String apellido,
+    required int edad,
+    required String celular,
+    required Country pais,
+    required Role role,
+  }) async {
+    await _auth.register(
+      email: email,
+      password: password,
+      nombre: nombre,
+      apellido: apellido,
+      edad: edad,
+      celular: celular,
+      pais: pais,
+      role: role,
+    );
+    notifyListeners();
+  }
+
+  Future<void> signIn({required String email, required String password}) async {
+    await _auth.signIn(email: email, password: password);
+    notifyListeners();
+  }
+
+  /// Despues del registro solo falta el rol y, si es chofer, el carro.
   Future<void> completeOnboarding({
-    required String name,
-    required String phone,
     required Role role,
     VehicleKind? vehicleKind,
     String? plate,
@@ -112,10 +150,8 @@ class AuthProvider extends ChangeNotifier {
     final current = _user;
     if (current == null) return;
 
-    await _rides.saveProfile(name: name, phone: phone, role: role);
-
     if (role == Role.driver) {
-      if (vehicleKind == null || (seats == null || seats < 1)) {
+      if (vehicleKind == null || seats == null || seats < 1) {
         throw const AuthException('El chofer tiene que registrar su carro.');
       }
       await _rides.saveVehicle(
@@ -125,6 +161,10 @@ class AuthProvider extends ChangeNotifier {
       );
     }
     notifyListeners();
+  }
+
+  Future<void> resetPassword(String email) async {
+    await _auth.sendPasswordReset(email);
   }
 
   Future<void> signOut() async {

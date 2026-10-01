@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/enums.dart';
@@ -7,8 +6,8 @@ import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
 
-/// Nombre, celular, rol y (si es chofer) el carro. El chofer solo puede
-/// registrar los asientos fisicos de su carro.
+/// Los datos (correo, nombre, apellido, edad, celular) ya se piden al
+/// registrarse. Aqui solo queda el rol y, si es chofer, el carro.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -18,11 +17,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
   final _plate = TextEditingController();
 
-  Role _role = Role.rider;
+  late Role _role;
   VehicleKind _kind = VehicleKind.pangana;
   int _seats = VehicleKind.pangana.typicalSeats;
   bool _saving = false;
@@ -31,14 +28,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    final phone = context.read<AuthProvider>().user?.phoneNumber;
-    if (phone != null) _phone.text = phone;
+    _role = context.read<AuthProvider>().chosenRole;
+    _seats = _kind.typicalSeats;
   }
 
   @override
   void dispose() {
-    _name.dispose();
-    _phone.dispose();
     _plate.dispose();
     super.dispose();
   }
@@ -51,8 +46,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
     try {
       await context.read<AuthProvider>().completeOnboarding(
-            name: _name.text.trim(),
-            phone: _phone.text.trim(),
             role: _role,
             vehicleKind: _role == Role.driver ? _kind : null,
             plate: _role == Role.driver ? _plate.text : null,
@@ -76,7 +69,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Completa tu perfil')),
+      appBar: AppBar(title: const Text('Un paso mas')),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -107,30 +100,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _seats = _kind.typicalSeats;
                 }),
               ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _name,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre y apellido',
-                  prefixIcon: Icon(Icons.badge),
-                ),
-                validator: (value) =>
-                    (value == null || value.trim().length < 3) ? 'Escribe tu nombre.' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Celular',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                validator: (value) {
-                  final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
-                  return digits.length < 8 ? 'Celular de 8 digitos.' : null;
-                },
+              const SizedBox(height: 8),
+              Text(
+                _role == Role.driver
+                    ? 'Registra tu carro y podras pedir la verificacion de chofer.'
+                    : 'Ya casi. Asi te contactamos cuando aceptes un cupo.',
+                style: const TextStyle(color: Colors.black54),
               ),
               if (_role == Role.driver) ...[
                 const SizedBox(height: 24),

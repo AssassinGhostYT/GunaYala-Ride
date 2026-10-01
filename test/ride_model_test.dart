@@ -111,18 +111,62 @@ void main() {
   });
 
   group('UserProfile', () {
-    test('lee stats del servidor', () {
+    test('lee los datos del registro y los stats del servidor', () {
       final profile = UserProfile.fromMap('u1', {
-        'name': 'Yari',
-        'phone': '+50760002222',
+        'nombre': 'Yari',
+        'apellido': 'Perez',
+        'edad': 34,
+        'celular': '60002222',
+        'prefijo': '+507',
+        'paisCodigo': 'PA',
+        'paisNombre': 'Panama',
+        'telefono': '+50760002222',
         'role': 'driver',
         'stats': {'ridesGiven': 12, 'ratingAverage': 4.5, 'ratingCount': 8},
       });
 
+      expect(profile.nombre, 'Yari');
+      expect(profile.apellido, 'Perez');
+      expect(profile.name, 'Yari Perez');
+      expect(profile.edad, 34);
+      expect(profile.telefono, '+50760002222');
+      expect(profile.phone, '+50760002222');
+      expect(profile.esPanama, isTrue);
+      expect(profile.iniciales, 'YP');
       expect(profile.isDriver, isTrue);
       expect(profile.ridesGiven, 12);
       expect(profile.hasRating, isTrue);
       expect(profile.ratingAverage, 4.5);
+    });
+
+    test('cuentas viejas con name y phone siguen leyendose', () {
+      final profile = UserProfile.fromMap('u1', {
+        'name': 'Yari Perez',
+        'phone': '+50760002222',
+        'role': 'driver',
+      });
+
+      expect(profile.nombre, 'Yari');
+      expect(profile.apellido, 'Perez');
+      expect(profile.name, 'Yari Perez');
+    });
+
+    test('pais distinto a Panama conserva su prefijo', () {
+      final profile = UserProfile.fromMap('u2', {
+        'nombre': 'Luis',
+        'apellido': 'Sosa',
+        'edad': 41,
+        'celular': '555123456',
+        'prefijo': '+1',
+        'paisCodigo': 'US',
+        'paisNombre': 'Estados Unidos',
+        'telefono': '+1555123456',
+        'role': 'rider',
+      });
+
+      expect(profile.esPanama, isFalse);
+      expect(profile.telefono, '+1555123456');
+      expect(profile.isDriver, isFalse);
     });
 
     test('rol desconocido cae en pasajero', () {

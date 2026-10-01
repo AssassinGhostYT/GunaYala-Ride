@@ -30,7 +30,7 @@ class ProfileTab extends StatelessWidget {
                 radius: 28,
                 backgroundColor: kCianOscuro.withValues(alpha: 0.12),
                 child: Text(
-                  initialsOf(profile?.name ?? '?'),
+                  profile?.iniciales ?? initialsOf(profile?.name ?? '?'),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -43,7 +43,11 @@ class ProfileTab extends StatelessWidget {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                '${profile?.role.label ?? ''}  ${profile?.phone ?? ''}',
+                [
+                  profile?.role.label ?? '',
+                  profile?.telefono ?? '',
+                  profile == null || profile.edad == 0 ? '' : '${profile.edad} anos',
+                ].where((part) => part.isNotEmpty).join('  |  '),
               ),
               trailing: profile?.photoUrl == null
                   ? IconButton(

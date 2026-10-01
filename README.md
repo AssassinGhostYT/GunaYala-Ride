@@ -28,6 +28,20 @@ La capa de seguridad es la que manda.
 7. **Llamada con el numero real** (dialer, sin VoIP) y **compartir = texto + link de
    Maps**. Nunca tracking vivo publico.
 
+## Registro y acceso
+
+- Registro con **correo y contrasena**: nombre, apellido, edad, celular y pais.
+  Panama (+507) es el pais principal y viene por defecto; se puede elegir otro.
+- En Firebase Auth hay que habilitar el proveedor **Correo/Contraseña**.
+- El codigo de WhatsApp (`sendOtp` / `verifyOtp`) queda disponible para
+  verificar el celular despues; no es la puerta de entrada.
+
+## Logo
+
+`tool/logo.py` dibuja el icono (marca tipo InDrive: carro blanco sobre fondo
+cian, faro coral) y lo baja a los cinco mipmap de Android mas los assets.
+Cambias el script y vuelves a correrlo, no hace falta diseno externo.
+
 ## Como corre el robot (GitHub Actions)
 
 `.github/workflows/build.yml` corre en cada push:

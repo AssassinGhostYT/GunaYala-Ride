@@ -1,3 +1,4 @@
+import '../data/countries.dart';
 import 'enums.dart';
 import 'user_profile.dart';
 
@@ -187,6 +188,18 @@ class RiderSummary {
         phone: (map['phone'] as String?) ?? '',
       );
 
-  UserProfile toProfile() =>
-      UserProfile(uid: uid, name: name, phone: phone, role: Role.rider);
+  UserProfile toProfile() {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    return UserProfile(
+      uid: uid,
+      nombre: parts.isEmpty ? '' : parts.first,
+      apellido: parts.length > 1 ? parts.sublist(1).join(' ') : '',
+      edad: 0,
+      celular: phone,
+      prefijo: '',
+      paisCodigo: kPanama.code,
+      paisNombre: kPanama.name,
+      role: Role.rider,
+    );
+  }
 }

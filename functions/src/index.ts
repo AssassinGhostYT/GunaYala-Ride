@@ -244,7 +244,7 @@ export const reviewDriverVerification = onCall(
     }
 
     const userSnap = await db.doc(`users/${targetUid}`).get();
-    const phone = userSnap.exists ? String(userSnap.get("phone") ?? "") : "";
+    const phone = userSnap.exists ? String(userSnap.get("telefono") ?? "") : "";
 
     await db.doc(`users/${targetUid}/verification/driver`).set(
       {

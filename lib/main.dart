@@ -25,8 +25,10 @@ Future<void> main() async {
     return;
   }
 
-  final authService = AuthService();
+  // AuthService usa RidesService para guardar el perfil en users/{uid}, asi que
+  // el orden importa.
   final ridesService = RidesService();
+  final authService = AuthService(ridesService: ridesService);
   final verificationService = VerificationService();
   final notificationService = NotificationService();
 

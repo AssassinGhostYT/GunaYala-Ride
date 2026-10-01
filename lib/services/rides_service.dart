@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../config.dart';
+import '../data/countries.dart';
 import '../models/enums.dart';
 import '../models/ride.dart';
 import '../models/ride_request.dart';
@@ -31,14 +32,24 @@ class RidesService {
   }
 
   Future<void> saveProfile({
-    required String name,
-    required String phone,
+    required String nombre,
+    required String apellido,
+    required int edad,
+    required String celular,
+    required Country pais,
     required Role role,
   }) async {
     await _db.doc('users/$_uid').set({
-      'name': name,
-      'phone': phone,
+      'nombre': nombre,
+      'apellido': apellido,
+      'edad': edad,
+      'celular': celular,
+      'prefijo': pais.dialCode,
+      'paisCodigo': pais.code,
+      'paisNombre': pais.name,
+      'telefono': pais.e164(celular),
       'role': role.name,
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
