@@ -41,8 +41,8 @@ class AuthService {
 
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
-        _cleanEmail(email),
-        password,
+        email: _cleanEmail(email),
+        password: password,
       );
       final user = credential.user;
       if (user == null) {
@@ -68,7 +68,10 @@ class AuthService {
 
   Future<void> signIn({required String email, required String password}) async {
     try {
-      await _auth.signInWithEmailAndPassword(_cleanEmail(email), password);
+      await _auth.signInWithEmailAndPassword(
+        email: _cleanEmail(email),
+        password: password,
+      );
     } catch (error) {
       throw AuthException(authErrorMessage(error));
     }
@@ -76,7 +79,7 @@ class AuthService {
 
   Future<void> sendPasswordReset(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(_cleanEmail(email));
+      await _auth.sendPasswordResetEmail(email: _cleanEmail(email));
     } catch (error) {
       throw AuthException(authErrorMessage(error));
     }

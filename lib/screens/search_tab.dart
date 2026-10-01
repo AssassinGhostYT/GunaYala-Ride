@@ -90,11 +90,11 @@ class _EmptySearch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         Icon(Icons.route, size: 72, color: kCianClaro),
-        const SizedBox(height: 16),
-        const Text(
+        SizedBox(height: 16),
+        Text(
           'Aun no hay viajes con cupo',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),

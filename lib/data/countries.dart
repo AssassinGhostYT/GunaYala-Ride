@@ -28,7 +28,7 @@ const Country kPanama = Country('PA', '+507', 'Panama');
 const int kPanamaCelularDigits = 8;
 
 List<Country> countriesForSignup() {
-  final all = <Country>[
+  const all = <Country>[
     kPanama,
     // Centroamerica
     Country('CR', '+506', 'Costa Rica'),
