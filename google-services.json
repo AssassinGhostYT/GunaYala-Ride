@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "197852143695",
+    "project_id": "gunayalaride",
+    "storage_bucket": "gunayalaride.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197852143695:android:f82d97f67fda09c8164a3a",
+        "android_client_info": {
+          "package_name": "com.gunayala.ride"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVzth-IQXwV3ywxpLDMBfp-c9xWA3FpBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
