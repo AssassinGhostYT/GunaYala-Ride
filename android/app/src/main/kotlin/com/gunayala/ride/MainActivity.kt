@@ -1,0 +1,5 @@
+package com.gunayala.ride
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Fotos de perfil públicas, documentos de verificación privados.
+// El cliente sube; el tamaño lo limita el cliente y el tipo lo fija esta regla.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    function isImageUnder5mb() {
+      return request.resource != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /users/{uid}/profile-{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && me() == uid
+        && isImageUnder5mb();
+    }
+
+    // Solo el dueño y el staff de revisión ven los documentos. El público nunca.
+    match /users/{uid}/verification/{allPaths=**} {
+      allow read: if isSignedIn() && (
+        me() == uid
+        || request.auth.token.staff == true
+      );
+      allow write: if isSignedIn()
+        && me() == uid
+        && isImageUnder5mb();
+    }
+
+    match /rides/{rideId}/{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Cualquier otra cosa está prohibida.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

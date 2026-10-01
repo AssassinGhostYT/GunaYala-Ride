@@ -1,0 +1,279 @@
+rules_version = '2';
+
+// GunaYala Ride — reglas de negocio en el servidor.
+// El cliente NUNCA escribe contadores ni el status de verificación.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && me() == uid;
+    }
+
+    function isStaff() {
+      return isSignedIn() && (
+        request.auth.token.staff == true ||
+        get(/databases/$(database)/documents/staff/$(me())).data.active == true
+      );
+    }
+
+    function driverDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)/verification/driver);
+    }
+
+    // Regla 1: sin insignia verificada no publica. En Panamá no hay API pública
+    // de licencias/cédulas, así que la insignia solo sale tras revisión humana.
+    function hasDriverBadge(uid) {
+      return isSignedIn()
+        && driverDoc(uid).exists
+        && driverDoc(uid).data.status in ['approved', 'verified']
+        && driverDoc(uid).data.badgeActive != false;
+    }
+
+    function isDriverBadgeActive() {
+      return hasDriverBadge(me());
+    }
+
+    function myRiderVerification() {
+      return get(/databases/$(database)/documents/users/$(me())/verification/rider);
+    }
+
+    function isActiveRide(rideId) {
+      let ride = get(/databases/$(database)/documents/rides/$(rideId));
+      return ride.exists && ride.data.status in ['scheduled', 'boarding', 'inProgress'];
+    }
+
+    function isPartyOfRide(rideId) {
+      let ride = get(/databases/$(database)/documents/rides/$(rideId));
+      return isSignedIn()
+        && ride.exists
+        && (
+          ride.data.driverId == me()
+          || me() in ride.data.riderIds
+        );
+    }
+
+    // Lo único que el chofer puede tocar en su propio viaje. seatsReserved,
+    // riderIds y los contadores son intocables: los mueve onSeatAccepted /
+    // onSeatReleased, que corren en el servidor.
+    function driverWritableRideFields() {
+      return [
+        'origin', 'destination', 'departureAt', 'seatsTotal', 'price',
+        'paymentMethods', 'notes', 'status', 'riderConfirmed',
+        'confirmedByRiderAt', 'updatedAt', 'cancelledBy', 'cancelledAt'
+      ];
+    }
+
+    match /users/{uid} {
+      // La ficha del chofer es visible (los pasajeros necesitan el número real
+      // para llamar). Los perfiles de otros pasajeros no se pueden leer.
+      allow get: if isSelf(uid) || isStaff()
+        || (isSignedIn() && resource.data.role == 'driver');
+      allow list: if isSelf(uid) || isStaff();
+
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'role', 'photoUrl', 'createdAt'])
+        && request.resource.data.role in ['driver', 'rider'];
+
+      // Contadores (stats) solo los escribe el servidor con FieldValue.increment.
+      allow update: if isSelf(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'phone', 'photoUrl', 'updatedAt'])
+        && request.resource.data.phone == resource.data.phone
+        && request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+
+      // Regla 1: status NO escribible por el cliente, ni approving ni rejected.
+      match /verification/{kind} {
+        allow read: if isSelf(uid) || isStaff();
+        allow create, update: if isStaff()
+          && kind in ['driver', 'rider']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'status', 'note', 'reviewedBy', 'reviewedAt', 'badgeActive',
+               'badgeSuspended', 'badgeSuspendedReason', 'badgeSuspendedAt',
+               'pendingHumanReview'
+             ]);
+        allow delete: if isStaff();
+      }
+
+      match /blocked/{otherId} {
+        allow read, write: if isSelf(uid) && otherId != uid;
+      }
+
+      match /devices/{hash} {
+        allow read, write, delete: if isSelf(uid);
+      }
+
+      match /stats/{docId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+    }
+
+    match /vehicles/{vehicleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.driverId == me()
+        && request.resource.data.seats is int
+        && request.resource.data.seats >= 1
+        && request.resource.data.seats <= 30
+        && request.resource.data.kind in ['4x4', 'pangana', 'sedan', 'busito'];
+      allow update: if isSignedIn()
+        && resource.data.driverId == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+             'plate', 'kind', 'seats', 'label', 'color', 'photoUrl', 'updatedAt'
+           ]);
+      allow delete: if isSignedIn() && resource.data.driverId == me();
+    }
+
+    match /rides/{rideId} {
+      allow read: if isSignedIn();
+      allow list: if isSignedIn();
+
+      // Regla 1 (insignia) + Regla 2 (cupos ofrecidos <= asientos físicos).
+      allow create: if isDriverBadgeActive()
+        && request.resource.data.driverId == me()
+        && request.resource.data.seatsTotal is int
+        && request.resource.data.seatsTotal >= 1
+        && request.resource.data.seatsTotal
+             <= get(/databases/$(database)/documents/vehicles/$(request.resource.data.vehicleId)).data.seats
+        && request.resource.data.seatsReserved == 0
+        && request.resource.data.riderIds.size() == 0
+        && request.resource.data.status == 'scheduled'
+        && request.resource.data.price is number
+        && request.resource.data.price > 0
+        && request.resource.data.departureAt is timestamp;
+
+      allow update: if isSignedIn() && (
+        (
+          resource.data.driverId == me()
+          && request.resource.data.driverId == resource.data.driverId
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(driverWritableRideFields())
+          // Regla 2: nunca ofrece menos cupos de los ya vendidos.
+          && request.resource.data.seatsTotal >= resource.data.seatsReserved
+          && request.resource.data.seatsTotal
+               <= get(/databases/$(database)/documents/vehicles/$(resource.data.vehicleId)).data.seats
+        )
+        || (
+          // El pasajero solo confirma que el viaje termino bien.
+          me() in resource.data.riderIds
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['riderConfirmed', 'confirmedByRiderAt'])
+          && request.resource.data.riderConfirmed == true
+        )
+      );
+
+      allow delete: if false;
+
+      // Regla 3: chat solo entre los del viaje y solo en abordaje/en camino.
+      match /chat/{messageId} {
+        allow read: if isPartyOfRide(rideId)
+          && get(/databases/$(database)/documents/rides/$(rideId)).data.status
+               in ['boarding', 'inProgress'];
+        allow create: if isPartyOfRide(rideId)
+          && get(/databases/$(database)/documents/rides/$(rideId)).data.status
+               in ['boarding', 'inProgress']
+          && request.resource.data.senderId == me()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+        allow update, delete: if false;
+      }
+
+      // GPS del chofer durante el viaje. No es tracking público.
+      match /live/{sampleId} {
+        allow read: if isPartyOfRide(rideId);
+        allow create: if isSignedIn()
+          && get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == me();
+        allow update, delete: if false;
+      }
+
+      // Solicitudes de cupo.
+      match /requests/{requestId} {
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == me()
+          || resource.data.riderId == me()
+        );
+
+        allow create: if isActiveRide(rideId)
+          && request.resource.data.riderId == me()
+          && request.resource.data.status == 'pending'
+          && request.resource.data.seats is int
+          && request.resource.data.seats >= 1
+          && !exists(/databases/$(database)/documents/rides/$(rideId)/requests/$(me()))
+          && !(
+            me() in get(/databases/$(database)/documents/rides/$(rideId)).data.riderIds
+          );
+
+        // Regla 4: el pasajero cancela su cupo y el asiento vuelve via trigger.
+        allow update: if isActiveRide(rideId) && (
+          (
+            resource.data.riderId == me()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'cancelledAt', 'updatedAt'])
+            && request.resource.data.status in ['cancelled']
+          )
+          || (
+            get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == me()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'respondedAt', 'seatsConfirmed', 'updatedAt'])
+            && request.resource.data.status in ['accepted', 'rejected']
+          )
+        );
+
+        allow delete: if false;
+      }
+    }
+
+    // Regla 5: no hay reseña sin riderConfirmed (lo abre onRideFinished).
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn() && (
+        resource.data.riderId == me() || resource.data.driverId == me()
+      );
+      allow create: if false;
+      allow update: if isSignedIn()
+        && resource.data.riderId == me()
+        && resource.data.rating == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'comment'])
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow delete: if isStaff();
+    }
+
+    // El reportado nunca lee los reportes que tiene en su contra.
+    match /reports/{reportId} {
+      allow read: if isStaff() || (isSignedIn() && resource.data.reporterId == me());
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == me()
+        && request.resource.data.reportedId != me()
+        && request.resource.data.keys().hasOnly([
+             'reporterId', 'reporterName', 'reportedId', 'reportedRole',
+             'rideId', 'reason', 'details', 'severity', 'createdAt'
+           ]);
+      allow update, delete: if false;
+    }
+
+    match /staff/{uid} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // Colecciones internas: los clientes no las tocan.
+    match /otps/{phoneHash} {
+      allow read, write: if false;
+    }
+    match /otpLimits/{phoneHash} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,42 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+**/build/
+coverage/
+*.iml
+.idea/
+.vscode/
+
+# Android: llaves y configuracion con secretos (NUNCA al repo)
+android/key.properties
+android/*.jks
+android/*.keystore
+**/*.jks
+**/*.keystore
+android/app/google-services.json
+**/google-services.json
+google-services.json
+.env
+*.p8
+serviceAccount*.json
+
+# Flutter wrapper: lo reinyecta el propio Flutter
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+
+# Functions
+functions/node_modules/
+functions/lib/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+.runtimeconfig.json
+
+# Sistema
+.DS_Store
+Thumbs.db
