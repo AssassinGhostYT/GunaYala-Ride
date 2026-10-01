@@ -33,7 +33,7 @@
             </intent-filter>
 
             <!-- Solo la clave restringida por paquete + SHA-1 de la app.
-                 Se inyecta con --dart-define o desde key.properties en CI. -->
+                 Se inyecta con dart-define o desde key.properties en CI. -->
             <meta-data
                 android:name="com.google.android.geo.API_KEY"
                 android:value="${MAPS_API_KEY}"/>
