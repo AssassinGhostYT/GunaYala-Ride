@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config.dart';
 import '../providers/auth_provider.dart';
 import '../providers/rides_provider.dart';
+import '../theme.dart';
 import '../widgets/ride_card.dart';
 import 'ride_detail_screen.dart';
 
