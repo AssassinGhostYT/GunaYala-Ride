@@ -25,7 +25,7 @@ class RideCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 16, color: kCianOscuro),
+                  const Icon(Icons.schedule, size: 16, color: kCianOscuro),
                   const SizedBox(width: 6),
                   Text(
                     '${departureLabel(ride.departureAt)}  ${dayLabel(ride.departureAt)}',
@@ -73,7 +73,7 @@ class RideCard extends StatelessWidget {
                 children: [
                   Text(
                     money(ride.price),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: kCianOscuro,
@@ -85,9 +85,9 @@ class RideCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
+              const Text(
                 paymentNotice,
-                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                style: TextStyle(fontSize: 11, color: Colors.black45),
               ),
             ],
           ),

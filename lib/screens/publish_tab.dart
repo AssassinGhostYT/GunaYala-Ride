@@ -380,7 +380,7 @@ class _BadgeGate extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.verified_outlined, size: 72, color: kCianClaro),
+            const Icon(Icons.verified_outlined, size: 72, color: kCianClaro),
             const SizedBox(height: 16),
             Text(
               'Necesitas la insignia verificada',

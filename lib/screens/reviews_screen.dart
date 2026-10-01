@@ -39,7 +39,7 @@ class ReviewsScreen extends StatelessWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final review = items[index];
                     return Card(
@@ -151,7 +151,7 @@ class _LeaveReviewState extends State<_LeaveReview> {
                       rating: _rating,
                       comment: _comment.text.trim(),
                     );
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Gracias por la resena.')),
                     );

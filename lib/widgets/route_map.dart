@@ -36,7 +36,7 @@ class _RouteMapPickerState extends State<RouteMapPicker> {
               ? const <Marker>{}
               : <Marker>{
                   Marker(
-                    markerId: MarkerId('origen'),
+                    markerId: const MarkerId('origen'),
                     position: _picked!,
                   ),
                 },

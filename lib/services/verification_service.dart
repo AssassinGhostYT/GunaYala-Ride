@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_functions/firebase_functions.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -72,7 +72,7 @@ class VerificationService {
       throw const VerificationException('No elegiste ninguna foto.');
     }
     if (picked.length > maxFiles) {
-      throw const VerificationException('Maximo $maxFiles fotos.');
+      throw VerificationException('Maximo $maxFiles fotos.');
     }
 
     final urls = <String>[];

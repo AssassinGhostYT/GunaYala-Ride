@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
@@ -41,6 +40,8 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
 
   User? get user => _user;
+
+  bool get signedIn => _user != null;
   String get uid => _user?.uid ?? '';
 
   UserProfile? get profile => _profile;

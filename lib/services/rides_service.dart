@@ -59,7 +59,7 @@ class RidesService {
     });
   }
 
-  Future<Vehicle?> watchVehicle() {
+  Stream<Vehicle?> watchVehicle() {
     return _db
         .collection('vehicles')
         .where('driverId', isEqualTo: _uid)
@@ -69,7 +69,7 @@ class RidesService {
       if (snap.docs.isEmpty) return null;
       final doc = snap.docs.first;
       return Vehicle.fromMap(doc.id, doc.data());
-    }).first;
+    });
   }
 
   // ---------- Publicar ----------

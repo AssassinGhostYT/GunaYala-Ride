@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
 import '../services/auth_service.dart';
 import '../theme.dart';
 
@@ -72,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _sending = false;
       });
       _startResendTimer();
-    } on FirebaseFunctionsError catch (error) {
+    } on FirebaseFunctionsException catch (error) {
       if (!mounted) return;
       setState(() {
         _sending = false;
@@ -101,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _auth.verifyOtp(phone: _normalizedPhone(), code: code);
       if (!mounted) return;
-    } on FirebaseFunctionsError catch (error) {
+    } on FirebaseFunctionsException catch (error) {
       if (!mounted) return;
       setState(() {
         _verifying = false;
@@ -123,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String _friendlyMessage(Object error) {
-    final message = error is FirebaseFunctionsError ? error.message : '';
+    final message = error is FirebaseFunctionsException ? (error.message ?? '') : '';
     if (message.contains('Demasiados')) return message;
     if (message.contains('vencio')) return 'El codigo vencio. Pide uno nuevo.';
     if (message.contains('bloqueado')) return 'Codigo bloqueado. Pide uno nuevo.';

@@ -132,9 +132,10 @@ class RideDetailScreen extends StatelessWidget {
               if (!isDriver)
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final ok = await SharePlus.instance.share(
+                    final result = await SharePlus.instance.share(
                       ShareParams(text: ContactService(ridesService: rides).shareText(ride)),
                     );
+                    final ok = result.status == ShareResultStatus.success;
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(ok ? 'Viaje compartido.' : 'No se compartio.')),
@@ -407,7 +408,7 @@ class _RiderActionBarState extends State<_RiderActionBar> {
                           rider: profile,
                           seats: 1,
                         );
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(

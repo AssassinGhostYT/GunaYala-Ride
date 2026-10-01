@@ -26,7 +26,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
-  bool _closed = false;
+  final bool _closed = false;
 
   @override
   void dispose() {
@@ -73,9 +73,9 @@ class _ChatScreenState extends State<ChatScreen> {
           final open = ride != null && rides.chatOpenFor(ride);
 
           if (!open) {
-            return Center(
+            return const Center(
               child: Padding(
-                padding: const EdgeInsets.all(28),
+                padding: EdgeInsets.all(28),
                 child: Text(
                   'El chat esta cerrado. Se abre en abordaje y en camino, y solo para '
                   'los de este viaje.',

@@ -14,13 +14,13 @@ class RidesProvider extends ChangeNotifier {
   final RidesService _rides;
 
   StreamSubscription<List<Ride>>? _sub;
-  List<Ride> _rides = const [];
+  List<Ride> _items = const [];
   bool _onlyWithSeats = true;
   bool _loading = true;
   String? _error;
   bool _publishing = false;
 
-  List<Ride> get rides => _rides;
+  List<Ride> get rides => _items;
 
   bool get onlyWithSeats => _onlyWithSeats;
 
@@ -32,7 +32,7 @@ class RidesProvider extends ChangeNotifier {
 
   /// Los viajes llenos no salen nunca.
   List<Ride> get visibleRides =>
-      _onlyWithSeats ? _rides.where((ride) => !ride.isFull).toList() : _rides;
+      _onlyWithSeats ? _items.where((ride) => !ride.isFull).toList() : _items;
 
   void start() {
     _sub?.cancel();
@@ -40,7 +40,7 @@ class RidesProvider extends ChangeNotifier {
     notifyListeners();
     _sub = _rides.searchRides().listen(
       (rides) {
-        _rides = rides;
+        _items = rides;
         _loading = false;
         notifyListeners();
       },

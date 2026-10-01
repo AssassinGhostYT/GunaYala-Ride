@@ -40,9 +40,10 @@ class ShieldScreen extends StatelessWidget {
           if (ride != null) ...[
             OutlinedButton.icon(
               onPressed: () async {
-                final ok = await SharePlus.instance.share(
+                final result = await SharePlus.instance.share(
                   ShareParams(text: contact.shareText(ride)),
                 );
+                final ok = result.status == ShareResultStatus.success;
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(ok ? 'Viaje compartido.' : 'No se compartio.')),
@@ -69,13 +70,13 @@ class ShieldScreen extends StatelessWidget {
                 await contact.callEmergency();
               },
               icon: const Icon(Icons.local_police, color: kCoral),
-              label: Text('Llamar al ${AppConfig.emergencyNumber}'),
+              label: const Text('Llamar al ${AppConfig.emergencyNumber}'),
             ),
           ] else
             OutlinedButton.icon(
               onPressed: () => contact.callEmergency(),
               icon: const Icon(Icons.local_police, color: kCoral),
-              label: Text('Llamar al ${AppConfig.emergencyNumber}'),
+              label: const Text('Llamar al ${AppConfig.emergencyNumber}'),
             ),
           const SizedBox(height: 24),
           const Card(
@@ -102,7 +103,7 @@ class ShieldScreen extends StatelessWidget {
               await launchUrl(url);
             },
             icon: const Icon(Icons.support_agent),
-            label: Text('Escribir a soporte ${AppConfig.supportPhone}'),
+            label: const Text('Escribir a soporte ${AppConfig.supportPhone}'),
           ),
         ],
       ),

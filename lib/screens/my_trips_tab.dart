@@ -70,7 +70,7 @@ class _MyBookings extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) => _TripTile(ride: items[index], mine: true),
         );
       },
@@ -97,7 +97,7 @@ class _DriverRides extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final ride = items[index];
             return Column(
@@ -189,7 +189,7 @@ class _Empty extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_note, size: 64, color: kCianClaro),
+            const Icon(Icons.event_note, size: 64, color: kCianClaro),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
           ],

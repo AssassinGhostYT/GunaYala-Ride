@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_functions/firebase_functions.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_core/firebase_core.dart' as fc;
 
 import '../config.dart';
 
@@ -62,4 +62,4 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
-Future<FirebaseApp> bootFirebase() => Firebase.initializeApp();
+Future<void> bootFirebase() => fc.Firebase.initializeApp();
