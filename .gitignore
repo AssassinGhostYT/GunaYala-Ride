@@ -16,9 +16,11 @@ android/*.jks
 android/*.keystore
 **/*.jks
 **/*.keystore
-android/app/google-services.json
+# El google-services.json REAL si se versiona en android/app/ para que CI
+# compile con Firebase de verdad. Los de otras rutas y las llaves de
+# service account nunca se suben.
 **/google-services.json
-google-services.json
+!android/app/google-services.json
 .env
 *.p8
 serviceAccount*.json

@@ -41,14 +41,15 @@ jobs:
         run: flutter test
 
       - name: Preparar google-services.json
-        # El archivo real va como secreto. Sin secreto (pull requests de
-        # forks, o el primer push) se genera uno de prueba solo para compilar:
-        # el APK abre, pero Firebase no le sirve datos reales.
+        # Orden: 1) el google-services.json del repo, 2) el secreto
+        # GOOGLE_SERVICES_JSON, 3) uno de prueba para que el build no se caiga.
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           mkdir -p android/app
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+          if [ -s android/app/google-services.json ]; then
+            echo "Usando el google-services.json del repo."
+          elif [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
             echo "Usando google-services.json del secreto."
           else
