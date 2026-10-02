@@ -4,7 +4,7 @@ import 'package:gunayala_ride/models/enums.dart';
 import 'package:gunayala_ride/models/ride.dart';
 import 'package:gunayala_ride/widgets/ride_card.dart';
 
-Ride _ride({required int seatsReserved, required int vehicleSeats}) {
+Ride _ride({required int seatsReserved, int seatsTotal = 10, int vehicleSeats = 14}) {
   return Ride(
     id: 'viaje1',
     driverId: 'chofer1',
@@ -17,7 +17,7 @@ Ride _ride({required int seatsReserved, required int vehicleSeats}) {
     origin: 'Puerto Armuelles',
     destination: 'El Porvenir',
     departureAt: DateTime.now().add(const Duration(hours: 4)),
-    seatsTotal: 10,
+    seatsTotal: seatsTotal,
     seatsReserved: seatsReserved,
     riderIds: const [],
     status: RideStatus.scheduled,
@@ -30,7 +30,7 @@ Widget _app(Widget child) => MaterialApp(home: Scaffold(body: child));
 void main() {
   testWidgets('la tarjeta muestra ruta, precio y chofer verificado', (tester) async {
     await tester.pumpWidget(
-      _app(RideCard(ride: _ride(seatsReserved: 2, vehicleSeats: 14), onTap: () {})),
+      _app(RideCard(ride: _ride(seatsReserved: 2, seatsTotal: 10), onTap: () {})),
     );
 
     expect(find.text('Puerto Armuelles'), findsOneWidget);
@@ -42,7 +42,7 @@ void main() {
 
   testWidgets('un viaje lleno sale como LLENO', (tester) async {
     await tester.pumpWidget(
-      _app(RideCard(ride: _ride(seatsReserved: 14, vehicleSeats: 14), onTap: () {})),
+      _app(RideCard(ride: _ride(seatsReserved: 10, seatsTotal: 10), onTap: () {})),
     );
 
     expect(find.text('LLENO'), findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
 
   testWidgets('un solo cupo sale como ULTIMO CUPO', (tester) async {
     await tester.pumpWidget(
-      _app(RideCard(ride: _ride(seatsReserved: 13, vehicleSeats: 14), onTap: () {})),
+      _app(RideCard(ride: _ride(seatsReserved: 9, seatsTotal: 10), onTap: () {})),
     );
 
     expect(find.text('ULTIMO CUPO'), findsOneWidget);
@@ -58,7 +58,7 @@ void main() {
 
   testWidgets('la tarjeta avisa que el pago es por fuera', (tester) async {
     await tester.pumpWidget(
-      _app(RideCard(ride: _ride(seatsReserved: 1, vehicleSeats: 14), onTap: () {})),
+      _app(RideCard(ride: _ride(seatsReserved: 1, seatsTotal: 10), onTap: () {})),
     );
 
     expect(

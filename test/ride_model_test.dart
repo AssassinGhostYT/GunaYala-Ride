@@ -57,7 +57,10 @@ void main() {
       expect(ride.driverVerified, isTrue);
       expect(ride.riderIds, ['a', 'b']);
       expect(ride.status, RideStatus.scheduled);
-      expect(ride.seatsLeft, 11);
+      // 10 cupos ofrecidos, 3 vendidos: quedan 7 (no 11 de los asientos).
+      expect(ride.seatsLeft, 7);
+      expect(ride.isFull, isFalse);
+      expect(ride.isLastSeat, isFalse);
     });
 
     test('campos que faltan no rompen el modelo', () {
