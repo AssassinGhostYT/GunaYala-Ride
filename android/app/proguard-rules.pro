@@ -22,17 +22,24 @@
 }
 
 # --- Firebase ---
-# Auth/Storage/Messaging leen anotaciones y reflectan sobre los modelos.
--keep class com.google.firebase.** { *; }
+# Auth/Storage/Messaging traen sus propias reglas de consumidor, asi que solo
+# hace falta preservar lo que el SDK resuelve por reflexion.
 -keep class com.google.firebase.auth.** { *; }
 -keep class com.google.firebase.storage.** { *; }
 -keep class com.google.firebase.messaging.** { *; }
--keep class com.google.android.gms.** { *; }
+-keep class com.google.firebase.** { *; }
+-keepclassmembers class com.google.firebase.auth.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
+# NO se hace -keep de TODO com.google.android.gms: son cientos de megabytes
+# de Play Services que el SDK nunca llama, y mantenerlos deja la reduccion
+# en 21%. Firebase ya declara lo que necesita.
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.tasks.** { *; }
+
 # --- Play Core / App Set ---
-# Lo usa el motor para dividir e instalar el bundle, no se referencia nunca.
+# Flutter lo invoca por nombre al dividir el bundle.
 -keep class com.google.android.play.core.** { *; }
 -dontwarn com.google.android.play.core.**
 
