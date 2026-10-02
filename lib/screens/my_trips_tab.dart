@@ -152,7 +152,7 @@ class _TripTile extends StatelessWidget {
         ),
         subtitle: Text(
           '${departureLabel(ride.departureAt)}  ${dayLabel(ride.departureAt)}  '
-          '${ride.status.label}  ${seatsLabel(ride.vehicleSeats, ride.seatsReserved)}',
+          '${ride.status.label}  ${seatsLabel(ride.seatsTotal, ride.seatsReserved)}',
           style: const TextStyle(fontSize: 12),
         ),
         trailing: ride.status == RideStatus.boarding ||

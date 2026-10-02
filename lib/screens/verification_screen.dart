@@ -9,8 +9,18 @@ import '../theme.dart';
 /// Verificacion. En Panama no hay API publica de licencias ni de cedulas:
 /// el cliente sube fotos y una persona revisa. El status nunca se escribe
 /// desde el movil.
-class VerificationScreen extends StatelessWidget {
+class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
+
+  @override
+  State<VerificationScreen> createState() => _VerificationScreenState();
+}
+
+class _VerificationScreenState extends State<VerificationScreen> {
+  /// Rutas de las fotos ya subidas, que se mandan a la Function al pedir la
+  /// revision. El status lo pone el servidor.
+  List<String> _documentos = const [];
+  bool _uploading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -100,35 +110,53 @@ class VerificationScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () async {
-              final service = context.read<VerificationService>();
-              try {
-                await service.uploadDocuments(folder: 'driver');
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Fotos subidas. Ahora pide la revision.')),
-                );
-              } on VerificationException catch (error) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(error.message)));
-              } catch (_) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No pudimos subir las fotos.')),
-                );
-              }
-            },
-            icon: const Icon(Icons.add_a_photo_outlined),
-            label: const Text('Subir documentos'),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: verification.status == VerificationStatus.pending
+            onPressed: _uploading
                 ? null
                 : () async {
                     final service = context.read<VerificationService>();
-                    await service.requestDriverReview();
+                    setState(() => _uploading = true);
+                    try {
+                      final urls = await service.uploadDocuments(folder: 'driver');
+                      if (!mounted) return;
+                      setState(() {
+                        _documentos = urls;
+                        _uploading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Fotos subidas. Ahora pide la revision.')),
+                      );
+                    } on VerificationException catch (error) {
+                      if (!mounted) return;
+                      setState(() => _uploading = false);
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(error.message)));
+                    } catch (_) {
+                      if (!mounted) return;
+                      setState(() => _uploading = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No pudimos subir las fotos.')),
+                      );
+                    }
+                  },
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: Text(
+              _documentos.isEmpty ? 'Subir documentos' : 'Volver a subir (${_documentos.length})',
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: verification.status == VerificationStatus.pending || _documentos.isEmpty
+                ? null
+                : () async {
+                    final service = context.read<VerificationService>();
+                    try {
+                      await service.requestDriverReview(documentos: _documentos);
+                    } on VerificationException catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(error.message)));
+                      return;
+                    }
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

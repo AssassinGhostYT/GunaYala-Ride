@@ -103,6 +103,72 @@ async function assertStaff(uid: string): Promise<void> {
   throw new HttpsError("permission-denied", "Solo personal autorizado revisa verificaciones.");
 }
 
+/**
+ * El chofer pide que le revisen los documentos. El movil NO escribe el status
+ * (las reglas tampoco lo dejan): llama a esta Function y es el servidor quien
+ * pone "pending" con las fotos que el mismo subio a Storage.
+ */
+export const requestDriverReview = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Entra a tu cuenta primero.");
+  }
+
+  const userSnap = await db.doc(`users/${uid}`).get();
+  if (!userSnap.exists) {
+    throw new HttpsError("failed-precondition", "Tu perfil todavia no esta guardado.");
+  }
+  if (userSnap.get("role") !== "driver") {
+    throw new HttpsError("failed-precondition", "Solo los choferes piden verificacion de chofer.");
+  }
+
+  const vehicle = await db
+    .collection("vehicles")
+    .where("driverId", "==", uid)
+    .limit(1)
+    .get();
+  if (vehicle.empty) {
+    throw new HttpsError("failed-precondition", "Registra tu carro antes de pedir la verificacion.");
+  }
+
+  const documentos = Array.isArray(request.data?.documentos)
+    ? (request.data.documentos as unknown[]).filter((d): d is string => typeof d === "string").slice(0, 8)
+    : [];
+  const nota = String(request.data?.nota ?? "").slice(0, 500);
+  if (documentos.length === 0) {
+    throw new HttpsError("invalid-argument", "Sube al menos una foto de tu licencia.");
+  }
+  for (const url of documentos) {
+    if (!url.startsWith("https://firebasestorage.googleapis.com/") && !url.startsWith("https://storage.googleapis.com/")) {
+      throw new HttpsError("invalid-argument", "Esa foto no viene de nuestro almacen.");
+    }
+    if (!url.includes(`/users/${uid}/verification/`)) {
+      throw new HttpsError("permission-denied", "Esa foto no es tuya.");
+    }
+  }
+
+  const ref = db.doc(`users/${uid}/verification/driver`);
+  const actual = await ref.get();
+  const status = String(actual.get("status") ?? "");
+  // Si ya esta verificado no se degrada la insignia por accident.
+  const nextBadge = status === "approved" || status === "verified" ? actual.get("badgeActive") : false;
+
+  await ref.set(
+    {
+      status: "pending",
+      documentos,
+      nota,
+      requestedAt: FieldValue.serverTimestamp(),
+      requestedBy: uid,
+      badgeActive: nextBadge,
+      pendingHumanReview: true,
+    },
+    { merge: true },
+  );
+
+  return { ok: true, status: "pending" };
+});
+
 /** En Panama no hay API publica de licencias ni de cedulas: el cliente nunca escribe status. */
 export const sendOtp = onCall(
   { secrets: [OTP_PEPPER, WHATSAPP_TOKEN, WHATSAPP_PHONE_ID] },
@@ -312,8 +378,10 @@ export const onSeatAccepted = onDocumentUpdated(
       if (offered > physical) {
         throw new HttpsError("failed-precondition", "Los cupos ofrecidos superan los asientos del carro.");
       }
-      if (reserved + seats > physical) {
-        throw new HttpsError("resource-exhausted", "No hay asientos libres.");
+      // El tope son los cupos OFRECIDOS (seatsTotal), no los asientos del
+      // carro: si el chofer ofrece 4 de 14, cuatro es lo que se puede vender.
+      if (reserved + seats > offered) {
+        throw new HttpsError("resource-exhausted", "No quedan cupos en este viaje.");
       }
 
       const riderIds: string[] = Array.isArray(ride.riderIds) ? ride.riderIds : [];

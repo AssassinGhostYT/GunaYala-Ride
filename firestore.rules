@@ -64,10 +64,13 @@ service cloud.firestore {
     // riderIds y los contadores son intocables: los mueve onSeatAccepted /
     // onSeatReleased, que corren en el servidor.
     function driverWritableRideFields() {
+      // Regla 5: 'riderConfirmed' NO esta aqui. Esa confirmacion es del
+      // pasajero; si el chofer pudiera escribirla, se autoaprobaria el viaje
+      // y podria abrir su propia resena.
       return [
         'origin', 'destination', 'departureAt', 'seatsTotal', 'price',
-        'paymentMethods', 'notes', 'status', 'riderConfirmed',
-        'confirmedByRiderAt', 'updatedAt', 'cancelledBy', 'cancelledAt'
+        'paymentMethods', 'notes', 'status', 'updatedAt',
+        'cancelledBy', 'cancelledAt'
       ];
     }
 
@@ -231,6 +234,11 @@ service cloud.firestore {
           && request.resource.data.status == 'pending'
           && request.resource.data.seats is int
           && request.resource.data.seats >= 1
+          // Regla 2: no se pueden pedir mas cupos de los que quedaban de los
+          // ofrecidos (seatsTotal), no de los asientos del carro.
+          && request.resource.data.seats
+               <= get(/databases/$(database)/documents/rides/$(rideId)).data.seatsTotal
+                  - get(/databases/$(database)/documents/rides/$(rideId)).data.seatsReserved
           && !exists(/databases/$(database)/documents/rides/$(rideId)/requests/$(me()))
           && !(
             me() in get(/databases/$(database)/documents/rides/$(rideId)).data.riderIds

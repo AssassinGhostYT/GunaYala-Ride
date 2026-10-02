@@ -67,11 +67,13 @@ class Ride {
   final ({double lat, double lng})? destinationPoint;
   final DateTime? createdAt;
 
-  int get seatsLeft => (vehicleSeats - seatsReserved).clamp(0, 1 << 31);
+  /// Cupos que quedan de los que el chofer ofrecio (no de los asientos).
+  int get seatsLeft => (seatsTotal - seatsReserved).clamp(0, 1 << 31);
 
-  bool get isFull => seatsReserved >= vehicleSeats;
+  bool get isFull => seatsReserved >= seatsTotal;
 
-  bool get isLastSeat => seatsReserved == vehicleSeats - 1;
+  /// Ultimo cupo OFRECIDO (no el ultimo asiento del carro).
+  bool get isLastSeat => seatsReserved == seatsTotal - 1;
 
   bool get isBookable =>
       status == RideStatus.scheduled && !isFull && departureAt.isAfter(DateTime.now());

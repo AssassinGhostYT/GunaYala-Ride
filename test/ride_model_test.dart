@@ -70,19 +70,19 @@ void main() {
 
   group('Gestor de cupos en el viaje', () {
     test('lleno deja de aparecer en la lista', () {
-      final ride = _ride(seatsReserved: 14, vehicleSeats: 14);
+      final ride = _ride(seatsTotal: 10, seatsReserved: 10, vehicleSeats: 14);
       expect(ride.isFull, isTrue);
       expect(ride.seatsLeft, 0);
     });
 
     test('ultimo cupo avisado', () {
-      final ride = _ride(seatsReserved: 13, vehicleSeats: 14);
+      final ride = _ride(seatsTotal: 10, seatsReserved: 9, vehicleSeats: 14);
       expect(ride.isLastSeat, isTrue);
       expect(ride.isFull, isFalse);
     });
 
     test('un viaje lleno ya no es reservable', () {
-      expect(_ride(seatsReserved: 14, vehicleSeats: 14).isBookable, isFalse);
+      expect(_ride(seatsTotal: 10, seatsReserved: 10, vehicleSeats: 14).isBookable, isFalse);
       expect(_ride().isBookable, isTrue);
     });
 
@@ -107,6 +107,23 @@ void main() {
       expect(fields['riderIds'], isEmpty);
       expect(fields['status'], 'scheduled');
       expect(fields['seatsTotal'], 10);
+    });
+  });
+
+  group('Ride: los cupos que se venden son los ofrecidos', () {
+    test('el lleno llega en el ultimo cupo ofrecido', () {
+      expect(_ride(seatsTotal: 4, seatsReserved: 3).isFull, isFalse);
+      expect(_ride(seatsTotal: 4, seatsReserved: 3).seatsLeft, 1);
+      expect(_ride(seatsTotal: 4, seatsReserved: 3).isLastSeat, isTrue);
+      expect(_ride(seatsTotal: 4, seatsReserved: 4).isFull, isTrue);
+      expect(_ride(seatsTotal: 4, seatsReserved: 4).seatsLeft, 0);
+    });
+
+    test('los 14 asientos del carro no son 14 cupos', () {
+      final ride = _ride(seatsTotal: 4, seatsReserved: 6);
+      expect(ride.vehicleSeats, 14);
+      expect(ride.isFull, isTrue);
+      expect(ride.isLastSeat, isFalse);
     });
   });
 

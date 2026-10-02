@@ -35,19 +35,22 @@ class VerificationService {
         .map((snap) => VerificationStatus.parse(snap.data()?['status'] as String?));
   }
 
-  /// Marca la revision como pendiente. El status lo pone reviewDriverVerification.
-  Future<void> requestDriverReview() {
-    return _db.doc('users/$_uid/verification/driver').set({
-      'status': VerificationStatus.pending.name,
-      'requestedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
-
-  Future<void> requestRiderReview() {
-    return _db.doc('users/$_uid/verification/rider').set({
-      'status': VerificationStatus.pending.name,
-      'requestedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+  /// El movil NO escribe el status: las reglas lo bloquean y con razón. Llama a
+  /// la Function, que valida que las fotos sean tuyas y pone "pending".
+  Future<void> requestDriverReview({required List<String> documentos, String nota = ''}) async {
+    if (documentos.isEmpty) {
+      throw const VerificationException('Sube tus fotos primero.');
+    }
+    try {
+      await _functions.httpsCallable('requestDriverReview').call({
+        'documentos': documentos,
+        'nota': nota,
+      });
+    } on FirebaseFunctionsException catch (error) {
+      throw VerificationException(
+        error.message ?? 'No pudimos pedir la revision. Intenta de nuevo.',
+      );
+    }
   }
 
   /// Ruta de la Function: solo staff. Si no eres staff, permission-denied.
@@ -88,10 +91,9 @@ class VerificationService {
       urls.add(await ref.getDownloadURL());
     }
 
-    await _db.doc('users/$_uid/verification').set({
-      if (folder == 'driver') 'driverDocuments': urls,
-    }, SetOptions(merge: true));
-
+    // Las rutas se devuelven para que requestDriverReview las mande a la
+    // Function. Aqui no se escribe nada en Firestore: el cliente tiene
+    // prohibido tocar users/{uid}/verification.
     return urls;
   }
 

@@ -164,10 +164,11 @@ class RidesService {
 
   /// Los viajes llenos no salen en la lista.
   Stream<List<Ride>> searchRides({String? origin}) {
+    // Sin where seatsReserved: "lleno" se calcula contra los cupos OFRECIDOS y
+    // se filtra aqui mismo. Asi la consulta no depende de un indice con rango.
     Query<Map<String, dynamic>> query = _db
         .collection('rides')
         .where('status', isEqualTo: RideStatus.scheduled.name)
-        .where('seatsReserved', isLessThan: 30)
         .orderBy('departureAt');
 
     if (origin != null && origin.isNotEmpty) {

@@ -144,7 +144,7 @@ class SeatsChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        seatsLabel(ride.vehicleSeats, ride.seatsReserved),
+        seatsLabel(ride.seatsTotal, ride.seatsReserved),
         style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
       ),
     );

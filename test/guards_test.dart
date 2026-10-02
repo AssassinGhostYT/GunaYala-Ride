@@ -66,6 +66,22 @@ void main() {
       expect(Guards.seatsNotBelowReserved(seatsTotal: 5, seatsReserved: 5), isTrue);
       expect(Guards.seatsNotBelowReserved(seatsTotal: 8, seatsReserved: 5), isTrue);
     });
+
+    test('lo que se vende son los cupos ofrecidos, no los asientos', () {
+      // Chofer con pana de 14 ofrece 4: lleno es a los 4, no a los 14.
+      expect(Guards.isFull(seatsReserved: 3, seatsTotal: 4), isFalse);
+      expect(Guards.isFull(seatsReserved: 4, seatsTotal: 4), isTrue);
+      expect(Guards.seatsLeft(seatsReserved: 3, seatsTotal: 4), 1);
+      expect(Guards.hasLastSeat(seatsReserved: 3, seatsTotal: 4), isTrue);
+      expect(Guards.hasLastSeat(seatsReserved: 2, seatsTotal: 4), isFalse);
+    });
+
+    test('nunca se venden cupos que ya no quedan', () {
+      expect(Guards.seatsAvailable(seatsReserved: 3, seatsTotal: 4, seats: 1), isTrue);
+      expect(Guards.seatsAvailable(seatsReserved: 3, seatsTotal: 4, seats: 2), isFalse);
+      expect(Guards.seatsAvailable(seatsReserved: 4, seatsTotal: 4, seats: 1), isFalse);
+      expect(Guards.seatsAvailable(seatsReserved: 0, seatsTotal: 4, seats: 0), isFalse);
+    });
   });
 
   group('Regla 3: chat solo en abordaje o en camino', () {
@@ -168,10 +184,10 @@ void main() {
 
   group('Gestor de cupos', () {
     test('libres, lleno y ultimo cupo', () {
-      expect(Guards.seatsLeft(seatsReserved: 2, vehicleSeats: 5), 3);
-      expect(Guards.isFull(seatsReserved: 5, vehicleSeats: 5), isTrue);
-      expect(Guards.hasLastSeat(seatsReserved: 4, vehicleSeats: 5), isTrue);
-      expect(Guards.hasLastSeat(seatsReserved: 3, vehicleSeats: 5), isFalse);
+      expect(Guards.seatsLeft(seatsReserved: 2, seatsTotal: 5), 3);
+      expect(Guards.isFull(seatsReserved: 5, seatsTotal: 5), isTrue);
+      expect(Guards.hasLastSeat(seatsReserved: 4, seatsTotal: 5), isTrue);
+      expect(Guards.hasLastSeat(seatsReserved: 3, seatsTotal: 5), isFalse);
     });
   });
 

@@ -75,15 +75,25 @@ class Guards {
     return digits.length >= 8;
   }
 
+  /// Regla 2: lo que se vende son los cupos ofrecidos. Los asientos fisicos
+  /// solo acotan arriba (seatsWithinVehicle).
   static int seatsLeft({
     required int seatsReserved,
-    required int vehicleSeats,
+    required int seatsTotal,
   }) =>
-      (vehicleSeats - seatsReserved).clamp(0, 1 << 31);
+      (seatsTotal - seatsReserved).clamp(0, 1 << 31);
 
-  static bool isFull({required int seatsReserved, required int vehicleSeats}) =>
-      seatsReserved >= vehicleSeats;
+  static bool isFull({required int seatsReserved, required int seatsTotal}) =>
+      seatsReserved >= seatsTotal;
 
-  static bool hasLastSeat({required int seatsReserved, required int vehicleSeats}) =>
-      seatsReserved == vehicleSeats - 1;
+  static bool hasLastSeat({required int seatsReserved, required int seatsTotal}) =>
+      seatsReserved == seatsTotal - 1;
+
+  /// Regla 4/2: nunca se venden mas cupos de los que quedaban.
+  static bool seatsAvailable({
+    required int seatsReserved,
+    required int seatsTotal,
+    required int seats,
+  }) =>
+      seats >= 1 && seatsReserved + seats <= seatsTotal;
 }
