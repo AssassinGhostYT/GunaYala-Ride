@@ -61,8 +61,34 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Play Store exige >=25% en optimizacion, ofuscacion y reduccion
+            // de codigo DEX. Sin R8 esto se queda en 21% y el bundle no pasa.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    // El .so de metadata solo sirve para Play Console: pesa y no se usa.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/*.kotlin_module",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "DebugProbesKt.bin",
+                "kotlin-tooling-metadata.json",
+            )
         }
     }
 }

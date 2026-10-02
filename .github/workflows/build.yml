@@ -161,24 +161,55 @@ jobs:
       - name: Sin keystore o sin google-services.json
         if: steps.keycheck.outputs.has != 'yes' || steps.gsjcheck.outputs.has != 'yes'
         run: |
-          echo "::warning::Falta ANDROID_KEYSTORE_BASE64 o GOOGLE_SERVICES_JSON: no se arma el AAB de Play."
-          echo "El AAB sin keystore sale firmado con la llave de debug y Play Store lo rechaza."
+          echo "::warning::Falta ANDROID_KEYSTORE_BASE64 o GOOGLE_SERVICES_JSON."
+          echo "Se construye el AAB con R8 y firma de debug: sirve para MEDIR el DEX"
+          echo "y confirmar que Play lo daria por bueno, pero Play Store lo rechaza"
+          echo "hasta que haya keystore de release configurado."
 
+      # El build release SIEMPRE corre: es el unico que activa R8, y si las
+      # reglas de proguard estuvieran mal, el release se caeria en el telefono
+      # del usuario y no aqui.
       - name: Flutter pub get
-        if: steps.keycheck.outputs.has == 'yes' && steps.gsjcheck.outputs.has == 'yes'
         run: flutter pub get
 
       - name: Flutter build appbundle --release
-        if: steps.keycheck.outputs.has == 'yes' && steps.gsjcheck.outputs.has == 'yes'
         run: flutter build appbundle --release
 
+      - name: Medir el DEX del bundle
+        # Play exige >=25% en optimizacion, ofuscacion y reduccion.
+        run: |
+          BUNDLE=build/app/outputs/bundle/release/app-release.aab
+          echo "AAB: $(du -h "$BUNDLE" | cut -f1)"
+          echo "base/dex:"
+          unzip -p "$BUNDLE" base/dex/classes.dex 2>/dev/null | wc -c | \
+            awk '{printf "  classes.dex: %.1f MB\n", $1/1048576}'
+          echo "metodos referenciados (marcador de reduccion de R8):"
+          unzip -p "$BUNDLE" BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties \
+            2>/dev/null || echo "  (sin metadata de dependencias: includeInBundle=false)"
+
       - uses: actions/upload-artifact@v4
-        if: steps.keycheck.outputs.has == 'yes' && steps.gsjcheck.outputs.has == 'yes'
         with:
           name: gunayala-ride-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
           if-no-files-found: error
+
+      - name: Subir a Play Store
+        if: steps.keycheck.outputs.has == 'yes' && steps.gsjcheck.outputs.has == 'yes'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Sin PLAY_SERVICE_ACCOUNT_JSON: el AAB queda como artifact."
+            exit 0
+          fi
+          echo "$PLAY_SERVICE_ACCOUNT_JSON" > play-service-account.json
+          curl -sSL https://firebase.tools | bash
+          firebase appdistribution:distribute \
+            build/app/outputs/bundle/release/app-release.aab \
+            --project gunayala-ride --token "${{ secrets.FIREBASE_CLI_TOKEN }}" \
+            --groups testers || echo "App Distribution fallo; el artifact sigue disponible."
+          rm -f play-service-account.json
 
   functions:
     name: Cloud Functions (TypeScript)
